@@ -1,52 +1,86 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Button, View } from 'react-native';
+import { router } from 'expo-router';
+import qs from 'qs';
+import {
+  CameraView,
+  useCameraPermissions,
+  useMicrophonePermissions,
+} from 'expo-camera';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigation } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
+import {Audio, InterruptionModeIOS} from 'expo-av';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+Audio.setAudioModeAsync({
+  interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
+  allowsRecordingIOS: true,
+  playsInSilentModeIOS: true,
+})
 
 export default function HomeScreen() {
+  const ref = useRef<CameraView>(null);
+  const [isRecording, setIsRecording] = useState(false);
+
+  const [p, r] = useCameraPermissions();
+  useEffect(() => {
+    if (p?.granted === false && p.canAskAgain) {
+      r();
+    }
+  }, [p, r]);
+
+  const [p2, r2] = useMicrophonePermissions();
+  useEffect(() => {
+    if (p2?.granted === false && p2.canAskAgain) {
+      r2();
+    }
+  }, [p2, r2]);
+
+  const n = useNavigation();
+  const focused = useIsFocused();
+  console.log('CAMERA VIEW SCREEN?', focused);
+  const [focusedLate, setFocusedLate] = useState(focused);
+  useEffect(() => {
+    setTimeout(() => {
+      setFocusedLate(focused);
+    }, 0)
+  }, [focused])
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={{ flex: 1, backgroundColor: 'gray' }}>
+      {focused && <CameraView
+        mode="video"
+        style={StyleSheet.absoluteFill}
+        facing="front"
+        ref={ref}
+      ></CameraView>}
+      <View style={{ position: 'absolute', bottom: 30, alignSelf: 'center' }}>
+        <Button
+          onPress={async () => {
+            try {
+              if (isRecording) {
+                console.log('stopping');
+                ref.current?.stopRecording();
+              } else {
+                setIsRecording(true);
+                console.log('starting');
+                const res = await ref.current?.recordAsync();
+                setIsRecording(false);
+                if (res?.uri) {
+                  console.log(`/confirm?${qs.stringify({ uri: res.uri })}`);
+                  router.push(
+                    { pathname: '/confirm' },
+                  );
+                  router.setParams({ uri: res.uri });
+                  console.log(res);
+                }
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }}
+          title={isRecording ? 'Stop recording' : 'Start recording'}
+        ></Button>
+      </View>
+    </View>
   );
 }
 
