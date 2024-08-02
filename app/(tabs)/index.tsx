@@ -42,7 +42,7 @@ export default function HomeScreen() {
   useEffect(() => {
     setTimeout(() => {
       setFocusedLate(focused);
-    }, 100)
+    }, 1000)
   }, [focused])
   return (
     <View style={{ flex: 1, backgroundColor: 'gray' }}>
