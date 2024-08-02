@@ -42,11 +42,11 @@ export default function HomeScreen() {
   useEffect(() => {
     setTimeout(() => {
       setFocusedLate(focused);
-    }, 0)
+    }, 100)
   }, [focused])
   return (
     <View style={{ flex: 1, backgroundColor: 'gray' }}>
-      {focused && <CameraView
+      {focusedLate && <CameraView
         mode="video"
         style={StyleSheet.absoluteFill}
         facing="front"
