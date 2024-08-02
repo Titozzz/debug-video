@@ -1,4 +1,6 @@
 node_modules/
+# reallow node_modules/expo-camera
+!node_modules/expo-camera/
 .expo/
 dist/
 npm-debug.*
